@@ -5,6 +5,7 @@ import {
   Clock,
   MapPin,
   Plus,
+  Sparkles,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
@@ -38,6 +39,13 @@ function isOldSpot(createdAt: Date): boolean {
   today.setHours(0, 0, 0, 0);
   spotDate.setHours(0, 0, 0, 0);
   return spotDate < today;
+}
+
+function isNewSpot(createdAt: Date): boolean {
+  const now = new Date();
+  const spotDate = new Date(createdAt);
+  const diffHours = (now.getTime() - spotDate.getTime()) / (1000 * 60 * 60);
+  return diffHours <= 10; // Consider new if created within the last 10 hours
 }
 
 function getTimeAgo(date: Date): string {
@@ -88,8 +96,10 @@ const SpotPanel = ({
   selectedSpotId,
   isLoading = false,
 }: SpotPanelProps) => {
-  // Show all spots, not just active ones
-  const allSpots = spots;
+  // Show all spots, sorted by creation date (newest first)
+  const allSpots = [...spots].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
   const activeSpots = spots.filter((s) => s.isActive);
   const confirmedSpots = activeSpots.filter((s) => s.likes > 5);
   const todayActiveSpots = activeSpots.filter((s) => !isOldSpot(s.createdAt));
@@ -124,7 +134,9 @@ const SpotPanel = ({
   return (
     <div
       className={`absolute bottom-0 left-0 right-0 z-10 rounded-t-2xl bg-card shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 ${
-        expanded ? "max-h-[75vh] sm:max-h-[60vh]" : "max-h-[50vh] sm:max-h-52"
+        expanded
+          ? "max-h-[75vh] sm:max-h-[60vh]"
+          : "max-h-[30vh] sm:max-h-[30vh]"
       }`}
     >
       <div className="sticky top-0 bg-card rounded-t-2xl z-20 flex items-center justify-between px-2 sm:px-4 pt-3 pb-2 border-b border-border/50">
@@ -200,130 +212,310 @@ const SpotPanel = ({
             </button>
           </div>
         ) : (
-          <div className="grid gap-2 pb-16">
-            {allSpots.map((spot) => {
-              const isOld = isOldSpot(spot.createdAt);
-              const isInactive = !spot.isActive;
-              const isSelected = selectedSpotId === spot.id;
-              return (
-                <div
-                  key={spot.id}
-                  onClick={() => onSpotClick?.(spot)}
-                  className={`flex items-start sm:items-center gap-3 rounded-xl border p-3 transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-primary/10 border-primary shadow-lg ring-2 ring-primary/50"
-                      : "bg-background hover:bg-muted"
-                  } ${isOld || isInactive ? "opacity-60" : ""}`}
-                >
-                  <span className="text-2xl shrink-0">🍛</span>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-sm truncate">
-                        {spot.name}
-                      </p>
-                      {isOld && (
-                        <span className="text-[10px] bg-red-700 text-yellow-50 px-2 py-0.5 rounded-full font-medium shrink-0">
-                          ইফতার শেষ
-                        </span>
-                      )}
-                      {isInactive && !isOld && (
-                        <span className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-medium shrink-0">
-                          নিষ্ক্রিয়
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
-                      <MapPin className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{spot.address}</span>
-                    </div>
-                    {spot.description && (
-                      <div className="text-xs text-accent font-medium mt-0.5">
-                        🍽️ {spot.description}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{getTimeAgo(spot.createdAt)}</span>
-                      </div>
-                      <span className="text-muted-foreground/50">•</span>
-                      <span>{formatDate(spot.createdAt)}</span>
-                    </div>
-
-                    {/* Mobile: Like/Dislike buttons below date */}
-                    <div className="flex items-center gap-1.5 mt-2 sm:hidden">
-                      <button
-                        disabled={isOld || isInactive}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLike(spot.id);
-                        }}
-                        className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                          userVotes[spot.id] === "like"
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "text-primary hover:bg-primary/10"
-                        }`}
-                      >
-                        <ThumbsUp className="h-3.5 w-3.5" />
-                        সত্যি {spot.likes}
-                      </button>
-                      <button
-                        disabled={isOld || isInactive}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDislike(spot.id);
-                        }}
-                        className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                          userVotes[spot.id] === "dislike"
-                            ? "bg-destructive text-destructive-foreground border-destructive"
-                            : "text-destructive hover:bg-destructive/10"
-                        }`}
-                      >
-                        <ThumbsDown className="h-3.5 w-3.5" />
-                        মিথ্যা {spot.dislikes}
-                      </button>
-                      <span className="pulse-dot shrink-0" />
-                    </div>
-                  </div>
-
-                  {/* Desktop: Like/Dislike buttons on the right */}
-                  <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-                    <button
-                      disabled={isOld || isInactive}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onLike(spot.id);
-                      }}
-                      className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        userVotes[spot.id] === "like"
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "text-primary hover:bg-primary/10"
-                      }`}
-                    >
-                      <ThumbsUp className="h-3.5 w-3.5" />
-                      সত্যি {spot.likes}
-                    </button>
-                    <button
-                      disabled={isOld || isInactive}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDislike(spot.id);
-                      }}
-                      className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        userVotes[spot.id] === "dislike"
-                          ? "bg-destructive text-destructive-foreground border-destructive"
-                          : "text-destructive hover:bg-destructive/10"
-                      }`}
-                    >
-                      <ThumbsDown className="h-3.5 w-3.5" />
-                      মিথ্যা {spot.dislikes}
-                    </button>
-                    <span className="pulse-dot shrink-0" />
-                  </div>
-                </div>
+          <div className="grid gap-3 pb-16">
+            {/* Group spots by new (today) vs old */}
+            {(() => {
+              const newSpots = allSpots.filter(
+                (s) => !isOldSpot(s.createdAt) && s.isActive,
               );
-            })}
+              const oldSpots = allSpots.filter(
+                (s) => isOldSpot(s.createdAt) || !s.isActive,
+              );
+
+              return (
+                <>
+                  {/* New/Today's Spots Section */}
+                  {newSpots.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 px-2 pt-2">
+                        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                        <h3 className="text-xs font-bold text-primary flex items-center gap-1">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          আজকের স্পট
+                        </h3>
+                        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                      </div>
+                      {newSpots.map((spot, index) => {
+                        const isSelected = selectedSpotId === spot.id;
+                        const isNew = isNewSpot(spot.createdAt);
+                        const isNewest = index === 0; // First item is the newest
+
+                        return (
+                          <div
+                            key={spot.id}
+                            onClick={() => onSpotClick?.(spot)}
+                            className={`flex items-start sm:items-center gap-3 rounded-xl border p-3 transition-all cursor-pointer relative overflow-hidden ${
+                              isSelected
+                                ? "bg-primary/10 border-primary shadow-lg ring-2 ring-primary/50"
+                                : isNew
+                                  ? "bg-gradient-to-r from-primary/5 via-background to-primary/5 hover:from-primary/10 hover:to-primary/10 border-primary/30 shadow-md"
+                                  : "bg-background hover:bg-muted"
+                            } ${isNewest ? "animate-pulse-slow" : ""}`}
+                            style={
+                              isNewest
+                                ? {
+                                    animation:
+                                      "pulse-glow 2s ease-in-out infinite",
+                                  }
+                                : {}
+                            }
+                          >
+                            {/* Shimmer effect for newest spot */}
+                            {isNewest && (
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent shimmer-animation" />
+                            )}
+
+                            <span className="text-2xl shrink-0 relative z-10">
+                              🍛
+                            </span>
+
+                            <div className="flex-1 min-w-0 relative z-10">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-semibold text-sm truncate">
+                                  {spot.name}
+                                </p>
+                                {isNew && (
+                                  <span className="text-[10px] bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-0.5 rounded-full font-bold shrink-0 flex items-center gap-1 shadow-sm animate-bounce-subtle">
+                                    <Sparkles className="h-2.5 w-2.5" />
+                                    নতুন
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{spot.address}</span>
+                              </div>
+                              {spot.description && (
+                                <div className="text-xs text-accent font-medium mt-0.5">
+                                  🍽️ {spot.description}
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{getTimeAgo(spot.createdAt)}</span>
+                                </div>
+                                <span className="text-muted-foreground/50">
+                                  •
+                                </span>
+                                <span>{formatDate(spot.createdAt)}</span>
+                              </div>
+
+                              {/* Mobile: Like/Dislike buttons below date */}
+                              <div className="flex items-center gap-1.5 mt-2 sm:hidden">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onLike(spot.id);
+                                  }}
+                                  className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors ${
+                                    userVotes[spot.id] === "like"
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "text-primary hover:bg-primary/10"
+                                  }`}
+                                >
+                                  <ThumbsUp className="h-3.5 w-3.5" />
+                                  সত্যি {spot.likes}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDislike(spot.id);
+                                  }}
+                                  className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors ${
+                                    userVotes[spot.id] === "dislike"
+                                      ? "bg-destructive text-destructive-foreground border-destructive"
+                                      : "text-destructive hover:bg-destructive/10"
+                                  }`}
+                                >
+                                  <ThumbsDown className="h-3.5 w-3.5" />
+                                  মিথ্যা {spot.dislikes}
+                                </button>
+                                <span className="pulse-dot shrink-0" />
+                              </div>
+                            </div>
+
+                            {/* Desktop: Like/Dislike buttons on the right */}
+                            <div className="hidden sm:flex items-center gap-1.5 shrink-0 relative z-10">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onLike(spot.id);
+                                }}
+                                className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors ${
+                                  userVotes[spot.id] === "like"
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "text-primary hover:bg-primary/10"
+                                }`}
+                              >
+                                <ThumbsUp className="h-3.5 w-3.5" />
+                                সত্যি {spot.likes}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDislike(spot.id);
+                                }}
+                                className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors ${
+                                  userVotes[spot.id] === "dislike"
+                                    ? "bg-destructive text-destructive-foreground border-destructive"
+                                    : "text-destructive hover:bg-destructive/10"
+                                }`}
+                              >
+                                <ThumbsDown className="h-3.5 w-3.5" />
+                                মিথ্যা {spot.dislikes}
+                              </button>
+                              <span className="pulse-dot shrink-0" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Old/Inactive Spots Section */}
+                  {oldSpots.length > 0 && (
+                    <div className="space-y-2">
+                      {newSpots.length > 0 && (
+                        <div className="flex items-center gap-2 px-2 pt-2">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                          <h3 className="text-xs font-semibold text-muted-foreground">
+                            পুরাতন স্পট
+                          </h3>
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                        </div>
+                      )}
+                      {oldSpots.map((spot) => {
+                        const isOld = isOldSpot(spot.createdAt);
+                        const isInactive = !spot.isActive;
+                        const isSelected = selectedSpotId === spot.id;
+
+                        return (
+                          <div
+                            key={spot.id}
+                            onClick={() => onSpotClick?.(spot)}
+                            className={`flex items-start sm:items-center gap-3 rounded-xl border p-3 transition-all cursor-pointer opacity-60 ${
+                              isSelected
+                                ? "bg-primary/10 border-primary shadow-lg ring-2 ring-primary/50"
+                                : "bg-background hover:bg-muted"
+                            }`}
+                          >
+                            <span className="text-2xl shrink-0">🍛</span>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-semibold text-sm truncate">
+                                  {spot.name}
+                                </p>
+                                {isOld && (
+                                  <span className="text-[10px] bg-red-700 text-yellow-50 px-2 py-0.5 rounded-full font-medium shrink-0">
+                                    ইফতার শেষ
+                                  </span>
+                                )}
+                                {isInactive && !isOld && (
+                                  <span className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-medium shrink-0">
+                                    নিষ্ক্রিয়
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{spot.address}</span>
+                              </div>
+                              {spot.description && (
+                                <div className="text-xs text-accent font-medium mt-0.5">
+                                  🍽️ {spot.description}
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{getTimeAgo(spot.createdAt)}</span>
+                                </div>
+                                <span className="text-muted-foreground/50">
+                                  •
+                                </span>
+                                <span>{formatDate(spot.createdAt)}</span>
+                              </div>
+
+                              {/* Mobile: Like/Dislike buttons below date */}
+                              <div className="flex items-center gap-1.5 mt-2 sm:hidden">
+                                <button
+                                  disabled={isOld || isInactive}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onLike(spot.id);
+                                  }}
+                                  className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    userVotes[spot.id] === "like"
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "text-primary hover:bg-primary/10"
+                                  }`}
+                                >
+                                  <ThumbsUp className="h-3.5 w-3.5" />
+                                  সত্যি {spot.likes}
+                                </button>
+                                <button
+                                  disabled={isOld || isInactive}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDislike(spot.id);
+                                  }}
+                                  className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    userVotes[spot.id] === "dislike"
+                                      ? "bg-destructive text-destructive-foreground border-destructive"
+                                      : "text-destructive hover:bg-destructive/10"
+                                  }`}
+                                >
+                                  <ThumbsDown className="h-3.5 w-3.5" />
+                                  মিথ্যা {spot.dislikes}
+                                </button>
+                                <span className="pulse-dot shrink-0" />
+                              </div>
+                            </div>
+
+                            {/* Desktop: Like/Dislike buttons on the right */}
+                            <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+                              <button
+                                disabled={isOld || isInactive}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onLike(spot.id);
+                                }}
+                                className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  userVotes[spot.id] === "like"
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "text-primary hover:bg-primary/10"
+                                }`}
+                              >
+                                <ThumbsUp className="h-3.5 w-3.5" />
+                                সত্যি {spot.likes}
+                              </button>
+                              <button
+                                disabled={isOld || isInactive}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDislike(spot.id);
+                                }}
+                                className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  userVotes[spot.id] === "dislike"
+                                    ? "bg-destructive text-destructive-foreground border-destructive"
+                                    : "text-destructive hover:bg-destructive/10"
+                                }`}
+                              >
+                                <ThumbsDown className="h-3.5 w-3.5" />
+                                মিথ্যা {spot.dislikes}
+                              </button>
+                              <span className="pulse-dot shrink-0" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>

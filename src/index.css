@@ -74,7 +74,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Segoe UI",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 }
 
@@ -94,7 +98,8 @@
 }
 
 @keyframes spot-blink {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -122,4 +127,160 @@
   100% {
     box-shadow: 0 0 0 0 hsla(122, 42%, 33%, 0);
   }
+}
+
+/* Shimmer animation for newest spots */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-animation {
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Pulse glow animation for newest spot */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsla(122, 42%, 40%, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px hsla(122, 42%, 40%, 0.2);
+  }
+}
+
+/* Subtle bounce animation for new badge */
+@keyframes bounce-subtle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Map marker animations */
+@keyframes marker-pulse {
+  0%,
+  100% {
+    transform: rotate(-45deg) scale(1);
+  }
+  50% {
+    transform: rotate(-45deg) scale(1.1);
+  }
+}
+
+@keyframes marker-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+}
+
+@keyframes badge-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.05);
+  }
+}
+
+/* Modern Leaflet Popup Styling */
+.modern-popup .leaflet-popup-content-wrapper {
+  background: hsl(var(--card));
+  border-radius: 16px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 0;
+  overflow: hidden;
+}
+
+.modern-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  min-width: 240px;
+}
+
+.modern-popup .leaflet-popup-tip-container {
+  display: none; /* Hide the default arrow for cleaner look */
+}
+
+/* Alternative: Style the arrow if you want to keep it */
+.modern-popup .leaflet-popup-tip {
+  background: hsl(var(--card));
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.1);
+}
+
+.modern-popup a.leaflet-popup-close-button {
+  color: hsl(var(--muted-foreground));
+  font-size: 20px;
+  font-weight: bold;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  right: 8px;
+  top: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-popup a.leaflet-popup-close-button:hover {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+/* Popup animation */
+.leaflet-popup {
+  animation: popup-bounce-in 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes popup-bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
 }
