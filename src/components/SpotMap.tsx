@@ -229,7 +229,14 @@ const SpotMap = ({
               }}
             >
               <Popup>
-                <div className="text-center min-w-[200px]">
+                <div className="text-center min-w-[200px] relative overflow-visible">
+                  {/* Confirmed Badge */}
+                  {spot.likes >= 3 && (
+                    <div className="absolute top-6 right-0 px-2 py-0.5 bg-green-600 text-white rounded-md text-[10px] font-bold shadow-lg">
+                      {isOld ? "নিশ্চিত ছিল" : "নিশ্চিত"}
+                    </div>
+                  )}
+
                   {groupSize > 1 && (
                     <div className="mb-2 px-2 py-1 bg-orange-100 border border-orange-300 rounded text-xs text-orange-700 font-medium">
                       📍 এই স্থানে {groupSize}টি স্পট আছে

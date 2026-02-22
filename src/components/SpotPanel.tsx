@@ -92,6 +92,33 @@ const SpotPanel = ({
   const confirmedSpots = activeSpots.filter((s) => s.likes > 5);
   const todayActiveSpots = activeSpots.filter((s) => !isOldSpot(s.createdAt));
 
+  interface SpotCounterProps {
+    count: number;
+    spots: BiryaniSpot[];
+  }
+
+  // Count locations with 5 or more total likes
+  function countPopularLocations(spots: BiryaniSpot[]): number {
+    const locationLikes = new Map<string, number>();
+
+    spots.forEach((spot) => {
+      const key = `${spot.lat.toFixed(4)},${spot.lng.toFixed(4)}`;
+      const currentLikes = locationLikes.get(key) || 0;
+      locationLikes.set(key, currentLikes + spot.likes);
+    });
+
+    let popularCount = 0;
+    locationLikes.forEach((likes) => {
+      if (likes >= 3) {
+        popularCount++;
+      }
+    });
+
+    return popularCount;
+  }
+
+  const popularLocations = countPopularLocations(spots);
+
   return (
     <div
       className={`absolute bottom-0 left-0 right-0 z-10 rounded-t-2xl bg-card shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 ${
@@ -103,10 +130,10 @@ const SpotPanel = ({
           onClick={onToggleExpand}
           className="flex items-center gap-2 text-sm font-bold text-foreground"
         >
-          <span>
+          {/* <span>
             🍛 সক্রিয় স্পট
-            {confirmedSpots.length > 0 && ` (নিশ্চিত=${confirmedSpots.length})`}
-          </span>
+            {confirmedSpots.length > 0 && ` (নিশ্চিত=${popularLocations}টি)`}
+          </span> */}
           <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
             {todayActiveSpots.length > 0
               ? `আজ ${todayActiveSpots.length}টি`
