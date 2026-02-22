@@ -19,6 +19,7 @@ interface SpotPanelProps {
   userVotes: { [spotId: string]: "like" | "dislike" };
   onSpotClick?: (spot: BiryaniSpot) => void;
   selectedSpotId?: string | null;
+  isLoading?: boolean;
 }
 
 function formatDate(date: Date): string {
@@ -85,6 +86,7 @@ const SpotPanel = ({
   userVotes,
   onSpotClick,
   selectedSpotId,
+  isLoading = false,
 }: SpotPanelProps) => {
   // Show all spots, not just active ones
   const allSpots = spots;
@@ -122,10 +124,10 @@ const SpotPanel = ({
   return (
     <div
       className={`absolute bottom-0 left-0 right-0 z-10 rounded-t-2xl bg-card shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 ${
-        expanded ? "max-h-[60vh]" : "max-h-52"
+        expanded ? "max-h-[75vh] sm:max-h-[60vh]" : "max-h-[50vh] sm:max-h-52"
       }`}
     >
-      <div className="sticky top-0 bg-card rounded-t-2xl z-20 flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50">
+      <div className="sticky top-0 bg-card rounded-t-2xl z-20 flex items-center justify-between px-2 sm:px-4 pt-3 pb-2 border-b border-border/50">
         <button
           onClick={onToggleExpand}
           className="flex items-center gap-2 text-sm font-bold text-foreground"
@@ -155,10 +157,38 @@ const SpotPanel = ({
       </div>
 
       <div
-        className="overflow-y-auto px-4 pb-4"
-        style={{ maxHeight: expanded ? "calc(60vh - 7rem)" : "7rem" }}
+        className="overflow-y-auto overflow-x-hidden px-0 sm:px-4 pb-4 py-2"
+        style={{
+          maxHeight: expanded ? "calc(75vh - 7rem)" : "calc(50vh - 7rem)",
+        }}
       >
-        {allSpots.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-primary/20 rounded-full"></div>
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm font-semibold text-foreground">
+                লোড হচ্ছে...
+              </p>
+              <div className="flex gap-1">
+                <span
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                ></span>
+                <span
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                ></span>
+                <span
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                ></span>
+              </div>
+            </div>
+          </div>
+        ) : allSpots.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
             <span className="text-3xl">🕌</span>
             <p className="text-sm">আজকে এখনো কোনো স্পট নেই</p>
@@ -170,7 +200,7 @@ const SpotPanel = ({
             </button>
           </div>
         ) : (
-          <div className="grid gap-2">
+          <div className="grid gap-2 pb-16">
             {allSpots.map((spot) => {
               const isOld = isOldSpot(spot.createdAt);
               const isInactive = !spot.isActive;
@@ -299,7 +329,7 @@ const SpotPanel = ({
       </div>
 
       {/* Copyright Footer */}
-      <div className="sticky bottom-0 border-t border-border/50 bg-card px-4 py-2 z-20">
+      <div className="sticky bottom-0 border-t border-border/50 bg-card px-2 sm:px-4 py-2 z-20">
         <p className="text-center text-[10px] text-muted-foreground">
           Developed by{" "}
           <a

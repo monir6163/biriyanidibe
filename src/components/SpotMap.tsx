@@ -87,6 +87,7 @@ interface SpotMapProps {
   onLike?: (id: string) => void;
   onDislike?: (id: string) => void;
   userVotes?: { [spotId: string]: "like" | "dislike" };
+  isLoading?: boolean;
 }
 
 function MapClickHandler({
@@ -195,117 +196,149 @@ const SpotMap = ({
   onLike,
   onDislike,
   userVotes = {},
+  isLoading = false,
 }: SpotMapProps) => {
   const offsettedSpots = offsetDuplicateLocations(spots);
 
   return (
-    <MapContainer
-      center={position}
-      zoom={13}
-      className="h-full w-full"
-      zoomControl={false}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <div className="relative h-full w-full">
+      {isLoading && (
+        <div className="absolute inset-0 z-[9999] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-primary/20 rounded-full"></div>
+              <div className="w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-base font-bold text-foreground">
+                ম্যাপ লোড হচ্ছে...
+              </p>
+              <div className="flex gap-1.5">
+                <span
+                  className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                ></span>
+                <span
+                  className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                ></span>
+                <span
+                  className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                ></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <MapContainer
+        center={position}
+        zoom={13}
+        className="h-full w-full"
+        zoomControl={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-      {isAddMode && <MapClickHandler onMapClick={onMapClick} />}
-      <MapCenterHandler center={center} />
+        {isAddMode && <MapClickHandler onMapClick={onMapClick} />}
+        <MapCenterHandler center={center} />
 
-      {offsettedSpots.map(
-        ({ spot, lat, lng, groupSize, indexInGroup }, index) => {
-          const isOld = isOldSpot(spot.createdAt);
-          const isInactive = !spot.isActive;
-          return (
-            <Marker
-              key={spot.id}
-              position={[lat, lng]}
-              zIndexOffset={index} // Ensure newer markers appear on top
-              // স্পটের ক্যাটাগরি অনুযায়ী রঙ ও আইকন সেট করুন
-              icon={createCustomIcon(spot.description)}
-              eventHandlers={{
-                click: () => onSpotClick?.(spot),
-              }}
-            >
-              <Popup>
-                <div className="text-center min-w-[200px] relative overflow-visible">
-                  {/* Confirmed Badge */}
-                  {spot.likes >= 3 && (
-                    <div className="absolute top-6 right-0 px-2 py-0.5 bg-green-600 text-white rounded-md text-[10px] font-bold shadow-lg">
-                      {isOld ? "নিশ্চিত ছিল" : "নিশ্চিত"}
-                    </div>
-                  )}
+        {offsettedSpots.map(
+          ({ spot, lat, lng, groupSize, indexInGroup }, index) => {
+            const isOld = isOldSpot(spot.createdAt);
+            const isInactive = !spot.isActive;
+            return (
+              <Marker
+                key={spot.id}
+                position={[lat, lng]}
+                zIndexOffset={index} // Ensure newer markers appear on top
+                // স্পটের ক্যাটাগরি অনুযায়ী রঙ ও আইকন সেট করুন
+                icon={createCustomIcon(spot.description)}
+                eventHandlers={{
+                  click: () => onSpotClick?.(spot),
+                }}
+              >
+                <Popup>
+                  <div className="text-center min-w-[200px] relative overflow-visible">
+                    {/* Confirmed Badge */}
+                    {spot.likes >= 3 && (
+                      <div className="absolute top-6 right-0 px-2 py-0.5 bg-green-600 text-white rounded-md text-[10px] font-bold shadow-lg">
+                        {isOld ? "নিশ্চিত ছিল" : "নিশ্চিত"}
+                      </div>
+                    )}
 
-                  {groupSize > 1 && (
-                    <div className="mb-2 px-2 py-1 bg-orange-100 border border-orange-300 rounded text-xs text-orange-700 font-medium">
-                      📍 এই স্থানে {groupSize}টি স্পট আছে
-                    </div>
-                  )}
-                  <p className="font-bold text-sm mb-1">🍛 {spot.name}</p>
-                  <p className="text-xs text-gray-600 mb-1">
-                    📍 {spot.address}
-                  </p>
-                  {spot.description && (
-                    <p className="text-xs text-orange-600 font-medium mb-2">
-                      {spot.description}
+                    {groupSize > 1 && (
+                      <div className="mb-2 px-2 py-1 bg-orange-100 border border-orange-300 rounded text-xs text-orange-700 font-medium">
+                        📍 এই স্থানে {groupSize}টি স্পট আছে
+                      </div>
+                    )}
+                    <p className="font-bold text-sm mb-1">🍛 {spot.name}</p>
+                    <p className="text-xs text-gray-600 mb-1">
+                      📍 {spot.address}
                     </p>
-                  )}
-                  {isOld && (
-                    <p className="text-xs text-gray-500 mb-2">
-                      ⏰ এই স্পটটি পুরানো (গত দিনের) হতে পারে
-                    </p>
-                  )}
+                    {spot.description && (
+                      <p className="text-xs text-orange-600 font-medium mb-2">
+                        {spot.description}
+                      </p>
+                    )}
+                    {isOld && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        ⏰ এই স্পটটি পুরানো (গত দিনের) হতে পারে
+                      </p>
+                    )}
 
-                  {/* Like/Dislike buttons */}
-                  <div className="flex items-center justify-center gap-2 mt-3 pt-2 border-t border-gray-200">
-                    <button
-                      disabled={isOld || isInactive}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onLike?.(spot.id);
-                      }}
-                      className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        userVotes[spot.id] === "like"
-                          ? "bg-green-600 text-white border-green-600"
-                          : "text-green-600 hover:bg-green-50 border-green-200"
-                      }`}
-                    >
-                      <ThumbsUp className="h-3.5 w-3.5" />
-                      সত্যি {spot.likes}
-                    </button>
-                    <button
-                      disabled={isOld || isInactive}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDislike?.(spot.id);
-                      }}
-                      className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        userVotes[spot.id] === "dislike"
-                          ? "bg-red-600 text-white border-red-600"
-                          : "text-red-600 hover:bg-red-50 border-red-200"
-                      }`}
-                    >
-                      <ThumbsDown className="h-3.5 w-3.5" />
-                      মিথ্যা {spot.dislikes}
-                    </button>
+                    {/* Like/Dislike buttons */}
+                    <div className="flex items-center justify-center gap-2 mt-3 pt-2 border-t border-gray-200">
+                      <button
+                        disabled={isOld || isInactive}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLike?.(spot.id);
+                        }}
+                        className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          userVotes[spot.id] === "like"
+                            ? "bg-green-600 text-white border-green-600"
+                            : "text-green-600 hover:bg-green-50 border-green-200"
+                        }`}
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        সত্যি {spot.likes}
+                      </button>
+                      <button
+                        disabled={isOld || isInactive}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDislike?.(spot.id);
+                        }}
+                        className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          userVotes[spot.id] === "dislike"
+                            ? "bg-red-600 text-white border-red-600"
+                            : "text-red-600 hover:bg-red-50 border-red-200"
+                        }`}
+                      >
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                        মিথ্যা {spot.dislikes}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        },
-      )}
+                </Popup>
+              </Marker>
+            );
+          },
+        )}
 
-      {newMarkerPos && (
-        <Marker
-          position={[newMarkerPos.lat, newMarkerPos.lng]}
-          zIndexOffset={1000}
-        >
-          <Popup>নতুন স্পট এখানে</Popup>
-        </Marker>
-      )}
-    </MapContainer>
+        {newMarkerPos && (
+          <Marker
+            position={[newMarkerPos.lat, newMarkerPos.lng]}
+            zIndexOffset={1000}
+          >
+            <Popup>নতুন স্পট এখানে</Popup>
+          </Marker>
+        )}
+      </MapContainer>
+    </div>
   );
 };
 

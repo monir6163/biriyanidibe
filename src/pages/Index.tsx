@@ -312,6 +312,7 @@ const Index = () => {
           onLike={handleLike}
           onDislike={handleDislike}
           userVotes={userVotes}
+          isLoading={loading}
         />
 
         <SpotPanel
@@ -324,6 +325,7 @@ const Index = () => {
           userVotes={userVotes}
           onSpotClick={handleSpotClick}
           selectedSpotId={selectedSpotId}
+          isLoading={loading}
         />
       </div>
 
